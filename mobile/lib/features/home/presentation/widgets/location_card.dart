@@ -135,7 +135,7 @@ class LocationCard extends StatelessWidget {
                           ),
                           children: [
                             TileLayer(
-                              urlTemplate: 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+                              urlTemplate: 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
                               userAgentPackageName: 'org.guardvarx.app',
                               tileBuilder: (context, tileWidget, tile) {
                                 return tileWidget;

@@ -26,11 +26,11 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
   String get _tileUrl {
     switch (_mapStyle) {
       case 'Satellite':
-        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        return 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
       case 'Terrain':
         return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
       default:
-        return 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png';
+        return 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
     }
   }
 
@@ -453,7 +453,7 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Coordinates row with copy button
+                  // Coordinates row with copy button (Flexible layout preventing overflow)
                   GestureDetector(
                     onTap: _copyCoordinates,
                     child: Container(
@@ -464,23 +464,23 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
                         border: Border.all(color: AppColors.glassBorderSubtle),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: const [
-                              Icon(Icons.gps_fixed_rounded, color: AppColors.secondaryText, size: 14),
-                              SizedBox(width: 6),
-                              Text(
-                                '13.040517° N, 80.250328° E',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontFamily: 'monospace',
-                                  fontWeight: FontWeight.w600,
-                                ),
+                          const Icon(Icons.gps_fixed_rounded, color: AppColors.secondaryText, size: 14),
+                          const SizedBox(width: 6),
+                          const Expanded(
+                            child: Text(
+                              '13.0405° N, 80.2503° E',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
+                            ),
                           ),
+                          const SizedBox(width: 6),
                           Text(
                             _isCopied ? 'Copied!' : 'Tap to copy',
                             style: TextStyle(
@@ -506,22 +506,24 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 4,
                           ),
                           onPressed: _launchGoogleMaps,
-                          icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                          icon: const Icon(Icons.open_in_new_rounded, size: 15),
                           label: const Text(
                             'Open in Google Maps',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
 
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
 
                       // Secondary Button: Share Location
                       Expanded(
@@ -530,16 +532,18 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.cyan,
                             side: const BorderSide(color: AppColors.cyan, width: 1.2),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           onPressed: _shareLocation,
-                          icon: const Icon(Icons.share_rounded, size: 15),
+                          icon: const Icon(Icons.share_rounded, size: 14),
                           label: const Text(
                             'Share Link',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
