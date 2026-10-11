@@ -1,0 +1,26 @@
+# Environment files
+.env
+*.env
+!.env.example
+
+# Go build artifacts
+backend/guardvarx-api
+backend/guardvarx-api.exe
+backend/*.exe
+*.test
+*.out
+
+# Flutter and Dart build artifacts
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/gradlew
+mobile/android/gradlew.bat
+
+# OS files
+.DS_Store
+Thumbs.db
