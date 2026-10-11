@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_colors.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/auth/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/home/presentation/location_details_screen.dart';
+import '../../features/home/presentation/widgets/bottom_navigation.dart';
 import '../../features/nearby/presentation/nearby_screen.dart';
 import '../../features/sos/presentation/sos_screen.dart';
 import '../../features/community/presentation/community_screen.dart';
+import '../../features/community/presentation/report_hazard_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/safe_walk/presentation/safe_walk_screen.dart';
 import '../../features/contacts/presentation/contacts_screen.dart';
+import '../../features/history/presentation/history_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -55,60 +59,11 @@ class MainNavigationShell extends StatelessWidget {
     final selectedIndex = _calculateSelectedIndex(context);
 
     return Scaffold(
+      extendBody: true, // Allow body to render behind floating glass navigation bar
       body: child,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.secondaryBackground,
-          border: Border(top: BorderSide(color: AppColors.glassBorder, width: 1.0)),
-        ),
-        child: NavigationBar(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: (idx) => _onItemTapped(idx, context),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          height: 68,
-          destinations: [
-            const NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.location_searching_rounded),
-              selectedIcon: Icon(Icons.my_location_rounded),
-              label: 'Nearby',
-            ),
-            NavigationDestination(
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.emergencyRed,
-                ),
-                child: const Icon(Icons.emergency_rounded, color: Colors.white, size: 20),
-              ),
-              selectedIcon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.emergencyRed,
-                ),
-                child: const Icon(Icons.emergency_rounded, color: Colors.white, size: 20),
-              ),
-              label: 'SOS',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.forum_outlined),
-              selectedIcon: Icon(Icons.forum_rounded),
-              label: 'Community',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
-            ),
-          ],
-        ),
+      bottomNavigationBar: CustomFloatingBottomNav(
+        selectedIndex: selectedIndex,
+        onIndexChanged: (idx) => _onItemTapped(idx, context),
       ),
     );
   }
@@ -139,6 +94,26 @@ final appRouter = GoRouter(
       path: '/contacts',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ContactsScreen(),
+    ),
+    GoRoute(
+      path: '/history',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const EmergencyHistoryScreen(),
+    ),
+    GoRoute(
+      path: '/notifications',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/location-details',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const LocationDetailsScreen(),
+    ),
+    GoRoute(
+      path: '/report',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ReportHazardScreen(),
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,

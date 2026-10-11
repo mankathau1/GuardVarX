@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/features/home/presentation/home_screen.dart';
+import 'package:mobile/features/home/presentation/widgets/central_sos_section.dart';
+import 'package:mobile/features/home/presentation/widgets/home_header.dart';
+import 'package:mobile/features/home/presentation/widgets/location_card.dart';
+import 'package:mobile/features/home/presentation/widgets/safety_status_card.dart';
+import 'package:mobile/features/home/presentation/widgets/quick_action_card.dart';
+import 'package:mobile/features/home/presentation/widgets/safe_walk_session_card.dart';
+import 'package:mobile/features/home/presentation/widgets/safety_tip_card.dart';
+import 'package:mobile/features/home/presentation/widgets/bottom_navigation.dart';
 import 'package:mobile/features/sos/domain/emergency_model.dart';
-import 'package:mobile/features/sos/presentation/widgets/deliberate_hold_button.dart';
 import 'package:mobile/features/sos/presentation/widgets/delivery_tracker_widget.dart';
 import 'package:mobile/main.dart';
 
@@ -17,54 +25,85 @@ void main() {
     expect(find.text('GUARDVARX'), findsOneWidget);
     expect(find.text('Safety. Connected.'), findsOneWidget);
 
-    // Let the splash screen auto-navigation delay finish
     await tester.pump(const Duration(milliseconds: 700));
     await tester.pumpAndSettle();
   });
 
-  testWidgets('DeliberateHoldButton quick tap does NOT trigger SOS', (WidgetTester tester) async {
-    bool triggered = false;
+  testWidgets('HomeScreen renders complete layout without overflow on 390x844 viewport', (WidgetTester tester) async {
+    // Set standard phone logical resolution (iPhone / Pixel: 390x844)
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: DeliberateHoldButton(
-            holdDuration: const Duration(seconds: 3),
-            onTrigger: () {
-              triggered = true;
-            },
-          ),
+      const ProviderScope(
+        child: MaterialApp(
+          home: HomeScreen(),
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
-    // Quick tap
-    await tester.tap(find.text('HOLD SOS'));
-    await tester.pump(const Duration(milliseconds: 200));
+    // Verify all key sections from the master reference layout:
+    // 1. Header
+    expect(find.byType(HomeHeader), findsOneWidget);
+    expect(find.text('Safety. Connected.'), findsOneWidget);
 
-    expect(triggered, isFalse, reason: 'Quick tap should not trigger emergency SOS');
+    // 2. Safety Status Card
+    expect(find.byType(SafetyStatusCard), findsOneWidget);
+    expect(find.text('Safety status'), findsOneWidget);
+    expect(find.text('Connected'), findsOneWidget);
+
+    // 3. Current Location Card
+    expect(find.byType(LocationCard), findsOneWidget);
+    expect(find.text('Current Location'), findsOneWidget);
+    expect(find.text('Sector 62, Electronic City'), findsOneWidget);
+
+    // 4. Central SOS Section
+    expect(find.byType(CentralSosSection), findsOneWidget);
+    expect(find.text('Safe Walk'), findsWidgets);
+    expect(find.text('Nearby Help'), findsOneWidget);
+    expect(find.text('SOS'), findsOneWidget);
+    expect(find.text('Hold for 3 seconds'), findsOneWidget);
+
+    // 5. Quick-Action Cards (2x2 Grid)
+    expect(find.byType(QuickActionCard), findsNWidgets(4));
+    expect(find.text('Trusted Contacts'), findsOneWidget);
+    expect(find.text('Emergency History'), findsOneWidget);
+    expect(find.text('Community'), findsOneWidget);
+    expect(find.text('Report Something'), findsOneWidget);
+
+    // 6. Safe Walk Session Card
+    expect(find.byType(SafeWalkSessionCard), findsOneWidget);
+    expect(find.text('Start a safe journey to share your live location'), findsOneWidget);
+
+    // 7. Safety Tip Card
+    expect(find.byType(SafetyTipCard), findsOneWidget);
+    expect(find.text('Safety Tip'), findsOneWidget);
   });
 
-  testWidgets('DeliberateHoldButton 3-second deliberate hold triggers SOS', (WidgetTester tester) async {
-    bool triggered = false;
+  testWidgets('Central SOS Section deliberate hold activates callback', (WidgetTester tester) async {
+    bool sosFired = false;
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: DeliberateHoldButton(
-            holdDuration: const Duration(seconds: 1), // 1 second hold for unit test
-            onTrigger: () {
-              triggered = true;
+          body: CentralSosSection(
+            holdDuration: const Duration(seconds: 1), // 1s for fast unit test
+            onSosTriggered: () {
+              sosFired = true;
             },
+            onSafeWalkTap: () {},
+            onNearbyHelpTap: () {},
           ),
         ),
       ),
     );
 
-    final finder = find.byType(DeliberateHoldButton);
-    expect(finder, findsOneWidget);
+    final sosFinder = find.text('SOS');
+    expect(sosFinder, findsOneWidget);
 
-    final gesture = await tester.startGesture(tester.getCenter(finder));
+    final gesture = await tester.startGesture(tester.getCenter(sosFinder));
     await tester.pump(const Duration(milliseconds: 50));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 600));
@@ -72,7 +111,69 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect(triggered, isTrue, reason: 'Holding for the required duration should trigger SOS');
+    expect(sosFired, isTrue, reason: 'Holding SOS for the specified duration must fire the trigger');
+  });
+
+  testWidgets('Horizontal swipe on SOS button does NOT trigger emergency alert', (WidgetTester tester) async {
+    bool sosFired = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CentralSosSection(
+            holdDuration: const Duration(seconds: 1),
+            onSosTriggered: () {
+              sosFired = true;
+            },
+            onSafeWalkTap: () {},
+            onNearbyHelpTap: () {},
+          ),
+        ),
+      ),
+    );
+
+    // Perform a horizontal fling/drag across the SOS button
+    await tester.fling(find.text('SOS'), const Offset(200, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(sosFired, isFalse, reason: 'A horizontal swipe must NEVER trigger SOS');
+  });
+
+  testWidgets('CustomFloatingBottomNav renders 5 destinations and switches tabs', (WidgetTester tester) async {
+    int currentTab = 0;
+
+    await tester.pumpWidget(
+      StatefulBuilder(
+        builder: (context, setState) {
+          return MaterialApp(
+            home: Scaffold(
+              bottomNavigationBar: CustomFloatingBottomNav(
+                selectedIndex: currentTab,
+                onIndexChanged: (idx) {
+                  setState(() => currentTab = idx);
+                },
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Nearby'), findsOneWidget);
+    expect(find.text('SOS'), findsOneWidget);
+    expect(find.text('Community'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
+
+    // Tap Nearby tab
+    await tester.tap(find.text('Nearby'));
+    await tester.pumpAndSettle();
+    expect(currentTab, equals(1));
+
+    // Tap Community tab
+    await tester.tap(find.text('Community'));
+    await tester.pumpAndSettle();
+    expect(currentTab, equals(3));
   });
 
   test('Emergency incident model adheres to state machine', () {
@@ -89,7 +190,6 @@ void main() {
 
     expect(incident.status, equals(DeliveryStatus.localSaved));
 
-    // Transition to server received
     incident = incident.copyWith(
       status: DeliveryStatus.serverReceived,
       receiptId: 'rcpt_verified_999',
