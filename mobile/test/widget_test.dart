@@ -244,17 +244,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Nearby Help'), findsWidgets);
 
-    // 2. Tap Profile directly on bottom navigation -> Instant jump to Profile
-    await tester.tap(find.text('Profile'));
+    // 2. Test on-screen AppBar back button -> Returns to previous page (Home)
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Safety. Connected.'), findsOneWidget);
+
+    // 3. Tap Profile avatar in HomeHeader -> Navigates to Profile (tab 4)
+    await tester.tap(find.byType(CircleAvatar));
     await tester.pumpAndSettle();
     expect(find.text('Profile'), findsWidgets);
 
-    // 3. Test on-screen AppBar back button -> Returns to previous page (Nearby)
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
-    await tester.pumpAndSettle();
-    expect(find.text('Nearby Help'), findsWidgets);
-
-    // 4. Test back from Nearby -> Returns to Home (the root)
+    // 4. Test back from Profile -> Returns to Home (the root)
     await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
     await tester.pumpAndSettle();
     expect(find.text('Safety. Connected.'), findsOneWidget);

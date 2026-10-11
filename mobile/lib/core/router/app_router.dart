@@ -7,7 +7,6 @@ import '../../features/auth/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/presentation/location_details_screen.dart';
-import '../../features/home/presentation/widgets/bottom_navigation.dart';
 import '../../features/nearby/presentation/nearby_screen.dart';
 import '../../features/sos/presentation/sos_screen.dart';
 import '../../features/community/presentation/community_screen.dart';
@@ -61,14 +60,6 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
     super.dispose();
   }
 
-  void _jumpToTab(int index) {
-    ref.read(mainNavigationProvider.notifier).setTab(index);
-    // Instant jump: no lag, no multi-page animated scrolling
-    if (_pageController.hasClients) {
-      _pageController.jumpToPage(index);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(mainNavigationProvider);
@@ -93,7 +84,6 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
         }
       },
       child: Scaffold(
-        extendBody: true, // Allow body to render behind floating glass navigation bar
         body: PageView(
           controller: _pageController,
           physics: const BouncingScrollPhysics(),
@@ -101,10 +91,6 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
             ref.read(mainNavigationProvider.notifier).setTab(idx);
           },
           children: _pages,
-        ),
-        bottomNavigationBar: CustomFloatingBottomNav(
-          selectedIndex: selectedIndex,
-          onIndexChanged: _jumpToTab,
         ),
       ),
     );

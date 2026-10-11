@@ -355,7 +355,7 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 100.0), // Padding above floating bottom bar
+          padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
