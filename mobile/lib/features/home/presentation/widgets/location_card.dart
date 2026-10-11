@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/glass_card.dart';
 import '../../../../core/widgets/gradient_icon_box.dart';
 
@@ -14,10 +13,10 @@ class LocationCard extends StatelessWidget {
 
   const LocationCard({
     super.key,
-    this.address = 'Sector 62, Electronic City',
-    this.cityState = 'Noida, Uttar Pradesh',
-    this.accuracyMeters = 8.0,
-    this.freshness = 'Just now',
+    this.address = 'Anna Salai, Teynampet',
+    this.cityState = 'Chennai, Tamil Nadu',
+    this.accuracyMeters = 12.0,
+    this.freshness = '2 min ago',
     this.isPermissionGranted = true,
     required this.onDetailsTap,
   });
@@ -29,153 +28,259 @@ class LocationCard extends StatelessWidget {
       backgroundColor: AppColors.locationCardBackground,
       borderColor: AppColors.locationCardBorder,
       glowColor: AppColors.blueGlow,
-      glowRadius: 16,
-      borderRadius: AppSpacing.radiusLg,
-      padding: const EdgeInsets.all(18.0),
-      child: Stack(
+      glowRadius: 14,
+      borderRadius: 18.0,
+      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+      child: Row(
         children: [
-          // Subtle ambient map line graphic in the background
-          Positioned(
-            right: -10,
-            bottom: -15,
-            child: Opacity(
-              opacity: 0.12,
-              child: Icon(
-                Icons.map_rounded,
-                size: 110,
-                color: AppColors.cyan,
-              ),
-            ),
-          ),
-
-          // Main Card Content
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+          // Left: Address info & Location Pin
+          Expanded(
+            flex: 12,
+            child: Row(
+              children: [
+                GradientIconBox(
+                  icon: Icons.location_on_rounded,
+                  iconColor: AppColors.primaryBlue,
+                  backgroundColor: AppColors.primaryBlue.withOpacity(0.18),
+                  borderColor: AppColors.primaryBlue.withOpacity(0.35),
+                  size: 38,
+                  iconSize: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      GradientIconBox(
-                        icon: Icons.location_on_rounded,
-                        iconColor: AppColors.primaryBlue,
-                        backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.2),
-                        borderColor: AppColors.primaryBlue.withValues(alpha: 0.4),
-                        size: 34,
-                        iconSize: 18,
-                      ),
-                      const SizedBox(width: 10),
                       const Text(
                         'Current Location',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
+                          color: AppColors.secondaryText,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        address,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           color: AppColors.primaryText,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        cityState,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.secondaryText,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
                   ),
-
-                  // Open location details chevron
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppColors.glassSurface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.glassBorder),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: AppColors.secondaryText,
-                      size: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              if (isPermissionGranted) ...[
-                Text(
-                  address,
-                  style: const TextStyle(
-                    color: AppColors.primaryText,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.2,
-                  ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  cityState,
-                  style: const TextStyle(
-                    color: AppColors.secondaryText,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                  ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: AppColors.secondaryText,
+                  size: 13,
                 ),
-                const SizedBox(height: 12),
-                Row(
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // Right: Google Map Preview Viewport with Radar Rings & 12m Accuracy Pill
+          Expanded(
+            flex: 10,
+            child: SizedBox(
+              height: 72,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Stack(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.elevatedGlassSurface,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.glassBorderSubtle),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.gps_fixed_rounded, color: AppColors.cyan, size: 11),
-                          const SizedBox(width: 4),
-                          Text(
-                            '± ${accuracyMeters.toStringAsFixed(0)}m accuracy',
-                            style: const TextStyle(
-                              color: AppColors.cyan,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                    // A. Dark Google Map Street Grid Painter
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _GoogleMapMiniPreviewPainter(),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        '• $freshness',
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.mutedText,
-                          fontSize: 11,
+
+                    // B. Interactive Navigation Chevrons (< and >)
+                    Positioned(
+                      left: 4,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Icon(
+                          Icons.chevron_left_rounded,
+                          size: 16,
+                          color: Colors.white.withOpacity(0.4),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 4,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          size: 16,
+                          color: Colors.white.withOpacity(0.4),
+                        ),
+                      ),
+                    ),
+
+                    // C. 12m Accuracy Glass Badge Pill
+                    Positioned(
+                      right: 14,
+                      bottom: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xE609121D),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.cyan.withOpacity(0.4), width: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.cyan.withOpacity(0.2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '${accuracyMeters.toStringAsFixed(0)} m',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ] else ...[
-                const Text(
-                  'Location Access Required',
-                  style: TextStyle(
-                    color: AppColors.warningAmber,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Tap to grant permission to share location with trusted contacts in an emergency.',
-                  style: TextStyle(
-                    color: AppColors.secondaryText,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+/// Custom painter rendering a dark-mode street map inspired by Google Maps
+/// centered around Anna Salai / Teynampet, Chennai with concentric radar rings.
+class _GoogleMapMiniPreviewPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 1. Dark Map Background
+    final bgPaint = Paint()..color = const Color(0xFF0B1421);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
+
+    // 2. City Blocks / Buildings (Subtle polygons)
+    final blockPaint = Paint()
+      ..color = const Color(0xFF101C2E)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(10, 8, 28, 22), const Radius.circular(3)),
+      blockPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(50, 6, 32, 18), const Radius.circular(3)),
+      blockPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(8, 42, 34, 22), const Radius.circular(3)),
+      blockPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(52, 46, 36, 20), const Radius.circular(3)),
+      blockPaint,
+    );
+
+    // 3. Minor Streets Grid
+    final minorStreetPaint = Paint()
+      ..color = const Color(0xFF17293F)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    // Horizontal minor lanes
+    canvas.drawLine(Offset(0, size.height * 0.25), Offset(size.width, size.height * 0.25), minorStreetPaint);
+    canvas.drawLine(Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), minorStreetPaint);
+
+    // Vertical minor lanes
+    canvas.drawLine(Offset(size.width * 0.25, 0), Offset(size.width * 0.25, size.height), minorStreetPaint);
+    canvas.drawLine(Offset(size.width * 0.8, 0), Offset(size.width * 0.8, size.height), minorStreetPaint);
+
+    // 4. Secondary Crossing Road (Mount Road tributary)
+    final secondaryRoadPaint = Paint()
+      ..color = const Color(0xFF1E3552)
+      ..strokeWidth = 4.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(0, size.height * 0.52), Offset(size.width, size.height * 0.48), secondaryRoadPaint);
+
+    // 5. Main Arterial Road (Anna Salai - diagonal axis)
+    final mainRoadPaint = Paint()
+      ..color = const Color(0xFF274468)
+      ..strokeWidth = 7.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(size.width * 0.15, size.height), Offset(size.width * 0.75, 0), mainRoadPaint);
+
+    // Main road inner center lane
+    final lanePaint = Paint()
+      ..color = const Color(0xFF38608F)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(size.width * 0.15, size.height), Offset(size.width * 0.75, 0), lanePaint);
+
+    // 6. User Location Center
+    final center = Offset(size.width * 0.52, size.height * 0.48);
+
+    // Concentric Radar Accuracy Rings (Google Maps blue accuracy radius)
+    final outerRingPaint = Paint()
+      ..color = AppColors.cyan.withOpacity(0.18)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 24, outerRingPaint);
+
+    final ringStrokePaint = Paint()
+      ..color = AppColors.cyan.withOpacity(0.4)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(center, 24, ringStrokePaint);
+    canvas.drawCircle(center, 14, ringStrokePaint..color = AppColors.cyan.withOpacity(0.25));
+
+    // Outer glow for location marker
+    final haloPaint = Paint()
+      ..color = AppColors.primaryBlue.withOpacity(0.45)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 9, haloPaint);
+
+    // Blue User Location Dot
+    final dotPaint = Paint()
+      ..color = AppColors.primaryBlue
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 6.5, dotPaint);
+
+    // White Center Core (Google Maps precision dot)
+    final corePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 2.5, corePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
