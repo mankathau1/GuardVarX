@@ -16,6 +16,9 @@ import '../../features/safe_walk/presentation/safe_walk_screen.dart';
 import '../../features/contacts/presentation/contacts_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
+import '../../features/im_guard/presentation/im_guard_chat_screen.dart';
+import '../../features/im_guard/presentation/widgets/autopilot_overlay.dart';
+import '../../features/nearby/presentation/offline_call_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -84,13 +87,18 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
         }
       },
       child: Scaffold(
-        body: PageView(
-          controller: _pageController,
-          physics: const BouncingScrollPhysics(),
-          onPageChanged: (idx) {
-            ref.read(mainNavigationProvider.notifier).setTab(idx);
-          },
-          children: _pages,
+        body: Stack(
+          children: [
+            PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              onPageChanged: (idx) {
+                ref.read(mainNavigationProvider.notifier).setTab(idx);
+              },
+              children: _pages,
+            ),
+            const AutopilotOverlay(),
+          ],
         ),
       ),
     );
@@ -142,6 +150,16 @@ final appRouter = GoRouter(
       path: '/report',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ReportHazardScreen(),
+    ),
+    GoRoute(
+      path: '/im-guard',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ImGuardChatScreen(),
+    ),
+    GoRoute(
+      path: '/offline-call',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const OfflineCallScreen(),
     ),
     GoRoute(
       path: '/home',

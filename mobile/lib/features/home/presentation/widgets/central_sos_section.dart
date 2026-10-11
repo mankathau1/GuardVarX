@@ -10,6 +10,7 @@ class CentralSosSection extends StatefulWidget {
   final VoidCallback onSosTriggered;
   final VoidCallback onSafeWalkTap;
   final VoidCallback onNearbyHelpTap;
+  final VoidCallback? onSosTap;
   final Duration holdDuration;
 
   const CentralSosSection({
@@ -17,6 +18,7 @@ class CentralSosSection extends StatefulWidget {
     required this.onSosTriggered,
     required this.onSafeWalkTap,
     required this.onNearbyHelpTap,
+    this.onSosTap,
     this.holdDuration = const Duration(seconds: 3),
   });
 
@@ -28,6 +30,9 @@ class _CentralSosSectionState extends State<CentralSosSection> with SingleTicker
   late AnimationController _animController;
   Timer? _hapticTimer;
   bool _isHolding = false;
+  DateTime? _pointerDownTime;
+  Offset? _pointerDownPos;
+  bool _movedTooFar = false;
 
   @override
   void initState() {
@@ -49,7 +54,10 @@ class _CentralSosSectionState extends State<CentralSosSection> with SingleTicker
     });
   }
 
-  void _startHolding() {
+  void _startHolding(Offset pos) {
+    _pointerDownPos = pos;
+    _movedTooFar = false;
+    _pointerDownTime = DateTime.now();
     setState(() => _isHolding = true);
     HapticFeedback.mediumImpact();
     _animController.forward(from: 0.0);
@@ -60,11 +68,26 @@ class _CentralSosSectionState extends State<CentralSosSection> with SingleTicker
     });
   }
 
+  void _onPointerMove(Offset pos) {
+    if (_pointerDownPos != null && (pos - _pointerDownPos!).distance > 18.0) {
+      _movedTooFar = true;
+    }
+  }
+
   void _stopHolding() {
     if (_isHolding) {
+      final elapsed = _pointerDownTime != null
+          ? DateTime.now().difference(_pointerDownTime!)
+          : Duration.zero;
+      final wasQuickTap = !_movedTooFar && elapsed.inMilliseconds < 400;
       setState(() => _isHolding = false);
       _hapticTimer?.cancel();
       _animController.reset();
+
+      // If user tapped quickly without dragging or holding, open SOS view
+      if (wasQuickTap && widget.onSosTap != null) {
+        widget.onSosTap!();
+      }
     }
   }
 
@@ -139,7 +162,8 @@ class _CentralSosSectionState extends State<CentralSosSection> with SingleTicker
               children: [
                 Listener(
                   behavior: HitTestBehavior.opaque,
-                  onPointerDown: (_) => _startHolding(),
+                  onPointerDown: (e) => _startHolding(e.position),
+                  onPointerMove: (e) => _onPointerMove(e.position),
                   onPointerUp: (_) => _stopHolding(),
                   onPointerCancel: (_) => _stopHolding(),
                   child: AnimatedBuilder(
@@ -242,12 +266,15 @@ class _CentralSosSectionState extends State<CentralSosSection> with SingleTicker
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Hold for 3 seconds',
-                  style: TextStyle(
-                    color: AppColors.secondaryText,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                GestureDetector(
+                  onTap: widget.onSosTap,
+                  child: const Text(
+                    'Hold for 3 seconds',
+                    style: TextStyle(
+                      color: AppColors.secondaryText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],

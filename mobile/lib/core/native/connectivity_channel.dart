@@ -89,4 +89,44 @@ class NativeConnectivityChannel {
       return false;
     }
   }
+
+  /// Broadcast device as an available GuardVarX Helper over BLE
+  static Future<bool> startHelperPresenceAdvertising({
+    String name = 'GuardVarX Helper',
+    String category = 'Safety Support',
+  }) async {
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('startHelperPresenceAdvertising', {
+        'name': name,
+        'category': category,
+      });
+      return success ?? false;
+    } on MissingPluginException {
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Send direct offline P2P Emergency Help Request over high-power BLE burst
+  static Future<bool> sendBleHelpRequest({
+    required String peerId,
+    required String message,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final bool? sent = await _channel.invokeMethod<bool>('sendBleHelpRequest', {
+        'peer_id': peerId,
+        'message': message,
+        'latitude': latitude,
+        'longitude': longitude,
+      });
+      return sent ?? false;
+    } on MissingPluginException {
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }

@@ -1,5 +1,5 @@
 name: mobile
-description: "A new Flutter project."
+description: "GuardVarX - The Autonomous Emergency Safety & Community Response Network."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -46,6 +46,11 @@ dependencies:
   geolocator: ^14.1.1
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
+  geocoding: ^5.0.0
+  google_maps_flutter: ^2.10.0
+  share_plus: ^13.3.1
+  permission_handler: 11.3.1
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:

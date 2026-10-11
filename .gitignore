@@ -16,7 +16,11 @@ mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/.packages
 mobile/build/
+mobile/android/build/
+**/build/
+*.apk
 mobile/android/.gradle/
+mobile/android/.kotlin/
 mobile/android/local.properties
 mobile/android/gradlew
 mobile/android/gradlew.bat

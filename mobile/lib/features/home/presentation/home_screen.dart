@@ -11,6 +11,9 @@ import '../../contacts/providers/contacts_provider.dart';
 import '../../safe_walk/providers/safe_walk_provider.dart';
 import '../../sos/domain/emergency_model.dart';
 import '../../sos/providers/sos_provider.dart';
+import '../../im_guard/providers/im_guard_provider.dart';
+import '../../../core/services/emergency_permission_service.dart';
+import '../../auth/presentation/widgets/emergency_permission_primer_dialog.dart';
 import 'widgets/home_header.dart';
 import 'widgets/safety_status_card.dart';
 import 'widgets/location_card.dart';
@@ -18,6 +21,7 @@ import 'widgets/central_sos_section.dart';
 import 'widgets/quick_action_card.dart';
 import 'widgets/safe_walk_session_card.dart';
 import 'widgets/safety_tip_card.dart';
+import 'widgets/dual_wing_floating_dock.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -29,6 +33,8 @@ class HomeScreen extends ConsumerWidget {
     final safeWalk = ref.watch(safeWalkProvider);
     final contacts = ref.watch(contactsProvider);
     final liveLoc = ref.watch(liveLocationProvider);
+    final homeScrollCtrl = ref.watch(homeScrollControllerProvider);
+    final emergencyPerms = ref.watch(emergencyPermissionsProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -37,10 +43,13 @@ class HomeScreen extends ConsumerWidget {
       ),
       child: Scaffold(
         backgroundColor: AppColors.background,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: const DualWingFloatingDock(),
         body: SafeArea(
           bottom: false,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 24.0),
+            controller: homeScrollCtrl,
+            padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 80.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -52,6 +61,64 @@ class HomeScreen extends ConsumerWidget {
                   onProfileTap: () => ref.read(mainNavigationProvider.notifier).setTab(4),
                 ),
                 const SizedBox(height: AppSpacing.md),
+
+                // Emergency Hardware Shield Banner (If not all granted)
+                if (!emergencyPerms.allGranted) ...[
+                  InkWell(
+                    onTap: () => EmergencyPermissionPrimerSheet.show(context),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.cyan.withOpacity(0.18),
+                            AppColors.primaryBlue.withOpacity(0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                        border: Border.all(color: AppColors.cyan.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.shield_rounded, color: AppColors.cyan, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Activate Emergency Hardware Shield',
+                                  style: TextStyle(
+                                    color: AppColors.primaryText,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '${emergencyPerms.grantedCount}/6 Active • Tap to enable offline video & walkie-talkie',
+                                  style: const TextStyle(color: AppColors.secondaryText, fontSize: 10),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.cyan,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'ACTIVATE',
+                              style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
 
                 // B. Safety & Connectivity Status Card
                 SafetyStatusCard(
@@ -87,6 +154,7 @@ class HomeScreen extends ConsumerWidget {
                         );
                     ref.read(mainNavigationProvider.notifier).setTab(2);
                   },
+                  onSosTap: () => ref.read(mainNavigationProvider.notifier).setTab(2),
                   onSafeWalkTap: () => context.push('/safewalk'),
                   onNearbyHelpTap: () => ref.read(mainNavigationProvider.notifier).setTab(1),
                 ),

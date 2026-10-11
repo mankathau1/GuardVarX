@@ -226,7 +226,7 @@ void main() {
     expect(find.textContaining('Receipt ID: rcpt_abc123'), findsOneWidget);
   });
 
-  testWidgets('MainNavigationShell allows swiping across tabs and handles back button gracefully', (WidgetTester tester) async {
+  testWidgets('MainNavigationShell disables swiping across tabs and navigates via tap actions gracefully', (WidgetTester tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
@@ -239,22 +239,27 @@ void main() {
     // Verify initially at Home
     expect(find.text('Safety. Connected.'), findsOneWidget);
 
-    // 1. Swipe left across the PageView to navigate to Nearby (tab 1)
+    // 1. Swiping left across the PageView does NOT change tab (physics is NeverScrollableScrollPhysics)
     await tester.fling(find.byType(PageView), const Offset(-300, 0), 800);
+    await tester.pumpAndSettle();
+    expect(find.text('Safety. Connected.'), findsOneWidget);
+
+    // 2. Tap Nearby Help card to navigate to Nearby (tab 1)
+    await tester.tap(find.text('Nearby Help'));
     await tester.pumpAndSettle();
     expect(find.text('Nearby Help'), findsWidgets);
 
-    // 2. Test on-screen AppBar back button -> Returns to previous page (Home)
+    // 3. Test on-screen AppBar back button -> Returns to previous page (Home)
     await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
     await tester.pumpAndSettle();
     expect(find.text('Safety. Connected.'), findsOneWidget);
 
-    // 3. Tap Profile avatar in HomeHeader -> Navigates to Profile (tab 4)
+    // 4. Tap Profile avatar in HomeHeader -> Navigates to Profile (tab 4)
     await tester.tap(find.byType(CircleAvatar));
     await tester.pumpAndSettle();
     expect(find.text('Profile'), findsWidgets);
 
-    // 4. Test back from Profile -> Returns to Home (the root)
+    // 5. Test back from Profile -> Returns to Home (the root)
     await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
     await tester.pumpAndSettle();
     expect(find.text('Safety. Connected.'), findsOneWidget);

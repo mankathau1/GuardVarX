@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LiveLocationState {
@@ -56,6 +57,7 @@ class LiveLocationState {
 
 class LiveLocationNotifier extends StateNotifier<LiveLocationState> {
   StreamSubscription<Position>? _positionSubscription;
+  DateTime _lastGeocodeTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   LiveLocationNotifier()
       : super(LiveLocationState(lastUpdated: DateTime.now())) {
@@ -66,7 +68,6 @@ class LiveLocationNotifier extends StateNotifier<LiveLocationState> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        // Location services disabled, retain fallback
         return;
       }
 
@@ -93,6 +94,7 @@ class LiveLocationNotifier extends StateNotifier<LiveLocationState> {
       );
 
       _updatePosition(initialPosition);
+      _fetchRealAddress(initialPosition.latitude, initialPosition.longitude);
 
       // Start continuous live stream
       _positionSubscription = Geolocator.getPositionStream(
@@ -101,7 +103,13 @@ class LiveLocationNotifier extends StateNotifier<LiveLocationState> {
           distanceFilter: 3, // Update every 3 meters
         ),
       ).listen(
-        _updatePosition,
+        (pos) {
+          _updatePosition(pos);
+          // Throttle reverse geocoding to once every 20 seconds to save battery and network
+          if (DateTime.now().difference(_lastGeocodeTime).inSeconds > 20) {
+            _fetchRealAddress(pos.latitude, pos.longitude);
+          }
+        },
         onError: (_) {},
       );
     } catch (_) {
@@ -120,6 +128,39 @@ class LiveLocationNotifier extends StateNotifier<LiveLocationState> {
       hasPermission: true,
       lastUpdated: DateTime.now(),
     );
+  }
+
+  Future<void> _fetchRealAddress(double lat, double lng) async {
+    _lastGeocodeTime = DateTime.now();
+    try {
+      final geocoding = Geocoding();
+      final placemarks = await geocoding.placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        final street = p.street ?? p.name ?? '';
+        final subLocality = p.subLocality ?? p.subAdministrativeArea ?? '';
+        final locality = p.locality ?? p.subAdministrativeArea ?? '';
+        final stateName = p.administrativeArea ?? '';
+        final pin = p.postalCode ?? '';
+
+        final addr = street.isNotEmpty
+            ? (subLocality.isNotEmpty && subLocality != street ? '$street, $subLocality' : street)
+            : (subLocality.isNotEmpty ? subLocality : locality);
+
+        final city = locality.isNotEmpty
+            ? (stateName.isNotEmpty ? '$locality, $stateName ${pin.isNotEmpty ? pin : ''}'.trim() : locality)
+            : stateName;
+
+        if (addr.isNotEmpty || city.isNotEmpty) {
+          state = state.copyWith(
+            address: addr.isNotEmpty ? addr : state.address,
+            cityState: city.isNotEmpty ? city : state.cityState,
+          );
+        }
+      }
+    } catch (_) {
+      // In offline mode, coordinates remain live
+    }
   }
 
   @override

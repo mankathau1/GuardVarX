@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/emergency_permission_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/glass_container.dart';
+import 'widgets/emergency_permission_primer_dialog.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _currentStep = 0;
 
   final List<Map<String, dynamic>> _steps = [
@@ -29,20 +32,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     {
       'icon': Icons.wifi_off_rounded,
       'title': 'Offline Store-and-Forward Mesh',
-      'subtitle': 'Even with zero cellular reception, emergencies are preserved locally and relayed securely over peer Bluetooth mesh.',
+      'subtitle': 'Even with zero cellular reception, emergencies are preserved locally and relayed securely over peer Bluetooth mesh and Wi-Fi Direct.',
       'tag': 'Offline Resilient',
     },
     {
-      'icon': Icons.info_outline_rounded,
-      'title': 'Important Safety Disclaimer',
-      'subtitle': 'GuardVarX is an additional civilian safety tool. It does NOT automatically replace official emergency services. In severe danger, call India 112 directly.',
-      'tag': 'Honest & Transparent',
+      'icon': Icons.video_call_rounded,
+      'title': 'Offline Video & Walkie-Talkie',
+      'subtitle': 'Communicate directly with nearby helpers via zero-internet video calls, voice walkie-talkie, and incident photo evidence.',
+      'tag': 'Zero Internet P2P',
+    },
+    {
+      'icon': Icons.shield_rounded,
+      'title': 'Activate Life-Saving Permissions',
+      'subtitle': 'Camera (Video), Microphone (Voice), Nearby Wi-Fi, Bluetooth, Location & Notifications are required for autonomous offline emergency response.',
+      'tag': 'Hardware Shield',
+      'isPermissionStep': true,
     },
   ];
 
   @override
   Widget build(BuildContext context) {
     final step = _steps[_currentStep];
+    final permState = ref.watch(emergencyPermissionsProvider);
+    final isPermStep = step['isPermissionStep'] == true;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -97,7 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Icon(
                       step['icon'] as IconData,
                       size: 48,
-                      color: AppColors.primaryText,
+                      color: isPermStep ? AppColors.cyan : AppColors.primaryText,
                     ),
                     const SizedBox(height: 20),
                     Text(
@@ -117,17 +129,80 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 1.5,
                       ),
                     ),
+                    if (isPermStep) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: permState.allGranted
+                                ? AppColors.successGreen
+                                : AppColors.glassBorder,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              permState.allGranted
+                                  ? Icons.check_circle_rounded
+                                  : Icons.info_outline_rounded,
+                              color: permState.allGranted
+                                  ? AppColors.successGreen
+                                  : AppColors.warningAmber,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                permState.allGranted
+                                    ? 'All 6 Emergency Permissions Granted!'
+                                    : '${permState.grantedCount} of 6 Permissions Active',
+                                style: TextStyle(
+                                  color: permState.allGranted
+                                      ? AppColors.successGreen
+                                      : AppColors.primaryText,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
 
               const Spacer(),
 
-              // Next / Continue button
+              // Next / Continue / Authorize button
               SizedBox(
                 width: double.infinity,
+                height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isPermStep && !permState.allGranted
+                        ? AppColors.cyan
+                        : AppColors.primaryBlue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () async {
+                    if (isPermStep) {
+                      if (!permState.allGranted) {
+                        await EmergencyPermissionPrimerSheet.show(context, onCompleted: () {
+                          if (context.mounted) {
+                            context.go('/auth');
+                          }
+                        });
+                      } else {
+                        context.go('/auth');
+                      }
+                      return;
+                    }
+
                     if (_currentStep < _steps.length - 1) {
                       setState(() {
                         _currentStep++;
@@ -137,8 +212,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     }
                   },
                   child: Text(
-                    _currentStep == _steps.length - 1 ? 'Get Started' : 'Continue',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    isPermStep
+                        ? (permState.allGranted ? 'Finish & Continue' : 'Authorize All Permissions')
+                        : (_currentStep == _steps.length - 1 ? 'Get Started' : 'Continue'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
                   ),
                 ),
               ),
