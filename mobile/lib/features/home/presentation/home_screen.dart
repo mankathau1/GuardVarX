@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/providers/navigation_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -46,7 +47,7 @@ class HomeScreen extends ConsumerWidget {
                   userName: user.isAuthenticated ? user.displayName : 'Priya',
                   unreadNotificationsCount: 1,
                   onNotificationsTap: () => context.push('/notifications'),
-                  onProfileTap: () => context.go('/profile'),
+                  onProfileTap: () => ref.read(mainNavigationProvider.notifier).setTab(4),
                 ),
                 const SizedBox(height: AppSpacing.md),
 
@@ -76,10 +77,10 @@ class HomeScreen extends ConsumerWidget {
                     ref.read(sosProvider.notifier).triggerSOS(
                           type: EmergencyType.personalThreat,
                         );
-                    context.go('/sos');
+                    ref.read(mainNavigationProvider.notifier).setTab(2);
                   },
                   onSafeWalkTap: () => context.push('/safewalk'),
-                  onNearbyHelpTap: () => context.go('/nearby'),
+                  onNearbyHelpTap: () => ref.read(mainNavigationProvider.notifier).setTab(1),
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
@@ -121,7 +122,7 @@ class HomeScreen extends ConsumerWidget {
                         accentColor: AppColors.successGreen,
                         title: 'Community',
                         subtitle: '4 local reports',
-                        onTap: () => context.go('/community'),
+                        onTap: () => ref.read(mainNavigationProvider.notifier).setTab(3),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),

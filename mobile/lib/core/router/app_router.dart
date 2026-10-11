@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/navigation_provider.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/auth/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/auth_screen.dart';
@@ -17,53 +19,93 @@ import '../../features/history/presentation/history_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-class MainNavigationShell extends StatelessWidget {
-  final Widget child;
+class MainNavigationShell extends ConsumerStatefulWidget {
+  final int initialIndex;
 
-  const MainNavigationShell({super.key, required this.child});
+  const MainNavigationShell({
+    super.key,
+    this.initialIndex = 0,
+  });
 
-  int _calculateSelectedIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/nearby')) return 1;
-    if (location.startsWith('/sos')) return 2;
-    if (location.startsWith('/community')) return 3;
-    if (location.startsWith('/profile')) return 4;
-    return 0;
+  @override
+  ConsumerState<MainNavigationShell> createState() => _MainNavigationShellState();
+}
+
+class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
+  late final PageController _pageController;
+
+  final List<Widget> _pages = const [
+    HomeScreen(),
+    NearbyScreen(),
+    SosScreen(),
+    CommunityScreen(),
+    ProfileScreen(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final initialTab = widget.initialIndex;
+    _pageController = PageController(initialPage: initialTab);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(mainNavigationProvider) != initialTab) {
+        ref.read(mainNavigationProvider.notifier).setTab(initialTab);
+      }
+    });
   }
 
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go('/home');
-        break;
-      case 1:
-        context.go('/nearby');
-        break;
-      case 2:
-        context.go('/sos');
-        break;
-      case 3:
-        context.go('/community');
-        break;
-      case 4:
-        context.go('/profile');
-        break;
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _jumpToTab(int index) {
+    ref.read(mainNavigationProvider.notifier).setTab(index);
+    // Instant jump: no lag, no multi-page animated scrolling
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(index);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = _calculateSelectedIndex(context);
+    final selectedIndex = ref.watch(mainNavigationProvider);
 
-    return Scaffold(
-      extendBody: true, // Allow body to render behind floating glass navigation bar
-      body: child,
-      bottomNavigationBar: CustomFloatingBottomNav(
-        selectedIndex: selectedIndex,
-        onIndexChanged: (idx) => _onItemTapped(idx, context),
+    // Listen to tab changes from external triggers (e.g. Header avatar, Quick actions)
+    ref.listen<int>(mainNavigationProvider, (previous, next) {
+      if (_pageController.hasClients && _pageController.page?.round() != next) {
+        _pageController.jumpToPage(next);
+      }
+    });
+
+    final notifier = ref.read(mainNavigationProvider.notifier);
+    final bool canPop = selectedIndex == 0 && notifier.history.length <= 1;
+
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        final handled = notifier.handleBack();
+        if (handled && _pageController.hasClients) {
+          _pageController.jumpToPage(ref.read(mainNavigationProvider));
+        }
+      },
+      child: Scaffold(
+        extendBody: true, // Allow body to render behind floating glass navigation bar
+        body: PageView(
+          controller: _pageController,
+          physics: const BouncingScrollPhysics(),
+          onPageChanged: (idx) {
+            ref.read(mainNavigationProvider.notifier).setTab(idx);
+          },
+          children: _pages,
+        ),
+        bottomNavigationBar: CustomFloatingBottomNav(
+          selectedIndex: selectedIndex,
+          onIndexChanged: _jumpToTab,
+        ),
       ),
     );
   }
@@ -115,31 +157,29 @@ final appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ReportHazardScreen(),
     ),
-    ShellRoute(
-      navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) => MainNavigationShell(child: child),
-      routes: [
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomeScreen(),
-        ),
-        GoRoute(
-          path: '/nearby',
-          builder: (context, state) => const NearbyScreen(),
-        ),
-        GoRoute(
-          path: '/sos',
-          builder: (context, state) => const SosScreen(),
-        ),
-        GoRoute(
-          path: '/community',
-          builder: (context, state) => const CommunityScreen(),
-        ),
-        GoRoute(
-          path: '/profile',
-          builder: (context, state) => const ProfileScreen(),
-        ),
-      ],
+    GoRoute(
+      path: '/home',
+      builder: (context, state) {
+        final tabStr = state.uri.queryParameters['tab'];
+        final tab = tabStr != null ? (int.tryParse(tabStr) ?? 0) : 0;
+        return MainNavigationShell(initialIndex: tab);
+      },
+    ),
+    GoRoute(
+      path: '/nearby',
+      redirect: (context, state) => '/home?tab=1',
+    ),
+    GoRoute(
+      path: '/sos',
+      redirect: (context, state) => '/home?tab=2',
+    ),
+    GoRoute(
+      path: '/community',
+      redirect: (context, state) => '/home?tab=3',
+    ),
+    GoRoute(
+      path: '/profile',
+      redirect: (context, state) => '/home?tab=4',
     ),
   ],
 );

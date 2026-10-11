@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/features/home/presentation/home_screen.dart';
 import 'package:mobile/features/home/presentation/widgets/central_sos_section.dart';
 import 'package:mobile/features/home/presentation/widgets/home_header.dart';
@@ -223,5 +224,39 @@ void main() {
     expect(find.text('1. Local Storage Secured'), findsOneWidget);
     expect(find.text('3. Server Confirmed Reception'), findsOneWidget);
     expect(find.textContaining('Receipt ID: rcpt_abc123'), findsOneWidget);
+  });
+
+  testWidgets('MainNavigationShell allows swiping across tabs and handles back button gracefully', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: MainNavigationShell(initialIndex: 0),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify initially at Home
+    expect(find.text('Safety. Connected.'), findsOneWidget);
+
+    // 1. Swipe left across the PageView to navigate to Nearby (tab 1)
+    await tester.fling(find.byType(PageView), const Offset(-300, 0), 800);
+    await tester.pumpAndSettle();
+    expect(find.text('Nearby Assistance'), findsOneWidget);
+
+    // 2. Tap Profile directly on bottom navigation -> Instant jump to Profile
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    expect(find.text('Profile & Security'), findsOneWidget);
+
+    // 3. Test on-screen AppBar back button -> Returns to previous page (Nearby)
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Nearby Assistance'), findsOneWidget);
+
+    // 4. Test back from Nearby -> Returns to Home (the root)
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Safety. Connected.'), findsOneWidget);
   });
 }

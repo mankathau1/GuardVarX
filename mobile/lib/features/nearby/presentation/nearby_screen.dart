@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/navigation_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/glass_container.dart';
 
-class NearbyScreen extends StatefulWidget {
+class NearbyScreen extends ConsumerStatefulWidget {
   const NearbyScreen({super.key});
 
   @override
-  State<NearbyScreen> createState() => _NearbyScreenState();
+  ConsumerState<NearbyScreen> createState() => _NearbyScreenState();
 }
 
-class _NearbyScreenState extends State<NearbyScreen> {
+class _NearbyScreenState extends ConsumerState<NearbyScreen> {
   bool _isAvailableAsHelper = false;
 
   final List<Map<String, dynamic>> _mockVolunteers = [
@@ -43,7 +45,19 @@ class _NearbyScreenState extends State<NearbyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Nearby Assistance')),
+      appBar: AppBar(
+        title: const Text('Nearby Assistance'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              ref.read(mainNavigationProvider.notifier).handleBack();
+            }
+          },
+        ),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),

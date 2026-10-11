@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/navigation_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/glass_container.dart';
 import '../providers/community_provider.dart';
@@ -115,6 +116,16 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Community Safety'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              ref.read(mainNavigationProvider.notifier).handleBack();
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_alert_rounded, color: AppColors.cyan),
