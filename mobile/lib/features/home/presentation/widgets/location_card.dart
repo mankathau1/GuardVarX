@@ -126,6 +126,7 @@ class LocationCard extends StatelessWidget {
                         border: Border.all(color: AppColors.glassBorderSubtle),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.gps_fixed_rounded, color: AppColors.cyan, size: 11),
                           const SizedBox(width: 4),
@@ -141,11 +142,14 @@ class LocationCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      '• $freshness',
-                      style: const TextStyle(
-                        color: AppColors.mutedText,
-                        fontSize: 11,
+                    Flexible(
+                      child: Text(
+                        '• $freshness',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.mutedText,
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                   ],

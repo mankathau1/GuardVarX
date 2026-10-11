@@ -55,18 +55,20 @@ class HomeScreen extends ConsumerWidget {
                 SafetyStatusCard(
                   hasLocationPermission: true,
                   isNetworkConnected: true,
-                  locationFreshnessText: 'Location available',
-                  lastUpdatedText: 'Updated 2m ago',
+                  statusTitle: 'You are safe',
+                  locationFreshnessText: 'Location active • Accuracy 12 m',
+                  networkTitle: 'Online',
+                  lastUpdatedText: 'Last updated\n2 min ago',
                   onTap: () => context.push('/location-details'),
                 ),
                 const SizedBox(height: AppSpacing.md),
 
                 // C. Current Location Card
                 LocationCard(
-                  address: 'Sector 62, Electronic City',
-                  cityState: 'Noida, Uttar Pradesh',
-                  accuracyMeters: 8.0,
-                  freshness: 'Just now',
+                  address: 'Anna Salai, Teynampet',
+                  cityState: 'Chennai, Tamil Nadu',
+                  accuracyMeters: 12.0,
+                  freshness: '2 min ago',
                   onDetailsTap: () => context.push('/location-details'),
                 ),
                 const SizedBox(height: AppSpacing.lg),

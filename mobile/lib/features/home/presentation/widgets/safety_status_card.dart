@@ -7,7 +7,9 @@ import '../../../../core/widgets/gradient_icon_box.dart';
 class SafetyStatusCard extends StatelessWidget {
   final bool hasLocationPermission;
   final bool isNetworkConnected;
+  final String statusTitle;
   final String locationFreshnessText;
+  final String networkTitle;
   final String lastUpdatedText;
   final VoidCallback? onTap;
 
@@ -15,8 +17,10 @@ class SafetyStatusCard extends StatelessWidget {
     super.key,
     this.hasLocationPermission = true,
     this.isNetworkConnected = true,
-    this.locationFreshnessText = 'Location available',
-    this.lastUpdatedText = 'Updated 2m ago',
+    this.statusTitle = 'You are safe',
+    this.locationFreshnessText = 'Location active • Accuracy 12 m',
+    this.networkTitle = 'Online',
+    this.lastUpdatedText = 'Last updated\n2 min ago',
     this.onTap,
   });
 
@@ -44,11 +48,11 @@ class SafetyStatusCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Safety status',
+                      Text(
+                        statusTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.primaryText,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -85,8 +89,8 @@ class SafetyStatusCard extends StatelessWidget {
             child: Row(
               children: [
                 GradientIconBox(
-                  icon: isNetworkConnected ? Icons.wifi_rounded : Icons.wifi_off_rounded,
-                  iconColor: isNetworkConnected ? AppColors.cyan : AppColors.warningAmber,
+                  icon: isNetworkConnected ? Icons.signal_cellular_alt_rounded : Icons.signal_cellular_off_rounded,
+                  iconColor: isNetworkConnected ? AppColors.successGreen : AppColors.warningAmber,
                   size: 36,
                   iconSize: 20,
                 ),
@@ -97,7 +101,7 @@ class SafetyStatusCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        isNetworkConnected ? 'Connected' : 'Offline',
+                        isNetworkConnected ? networkTitle : 'Offline',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -109,12 +113,13 @@ class SafetyStatusCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         lastUpdatedText,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: AppColors.secondaryText,
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
+                          height: 1.1,
                         ),
                       ),
                     ],

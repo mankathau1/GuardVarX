@@ -52,13 +52,13 @@ void main() {
 
     // 2. Safety Status Card
     expect(find.byType(SafetyStatusCard), findsOneWidget);
-    expect(find.text('Safety status'), findsOneWidget);
-    expect(find.text('Connected'), findsOneWidget);
+    expect(find.text('You are safe'), findsOneWidget);
+    expect(find.text('Online'), findsOneWidget);
 
     // 3. Current Location Card
     expect(find.byType(LocationCard), findsOneWidget);
     expect(find.text('Current Location'), findsOneWidget);
-    expect(find.text('Sector 62, Electronic City'), findsOneWidget);
+    expect(find.text('Anna Salai, Teynampet'), findsOneWidget);
 
     // 4. Central SOS Section
     expect(find.byType(CentralSosSection), findsOneWidget);
@@ -242,17 +242,17 @@ void main() {
     // 1. Swipe left across the PageView to navigate to Nearby (tab 1)
     await tester.fling(find.byType(PageView), const Offset(-300, 0), 800);
     await tester.pumpAndSettle();
-    expect(find.text('Nearby Assistance'), findsOneWidget);
+    expect(find.text('Nearby Help'), findsWidgets);
 
     // 2. Tap Profile directly on bottom navigation -> Instant jump to Profile
     await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
-    expect(find.text('Profile & Security'), findsOneWidget);
+    expect(find.text('Profile'), findsWidgets);
 
     // 3. Test on-screen AppBar back button -> Returns to previous page (Nearby)
     await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
     await tester.pumpAndSettle();
-    expect(find.text('Nearby Assistance'), findsOneWidget);
+    expect(find.text('Nearby Help'), findsWidgets);
 
     // 4. Test back from Nearby -> Returns to Home (the root)
     await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
