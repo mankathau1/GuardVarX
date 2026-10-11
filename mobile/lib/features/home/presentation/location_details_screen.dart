@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/glass_card.dart';
@@ -12,7 +14,7 @@ class LocationDetailsScreen extends StatefulWidget {
 }
 
 class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
-  final TransformationController _transformController = TransformationController();
+  final MapController _mapController = MapController();
   String _mapStyle = 'Dark Standard';
   bool _isCopied = false;
 
@@ -21,16 +23,19 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
   static const double _longitude = 80.250328;
   static const String _address = 'Anna Salai, Teynampet, Chennai, Tamil Nadu 600018';
 
-  @override
-  void dispose() {
-    _transformController.dispose();
-    super.dispose();
+  String get _tileUrl {
+    switch (_mapStyle) {
+      case 'Satellite':
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case 'Terrain':
+        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+      default:
+        return 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png';
+    }
   }
 
   void _recenter() {
-    setState(() {
-      _transformController.value = Matrix4.identity();
-    });
+    _mapController.move(const LatLng(_latitude, _longitude), 16.0);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         backgroundColor: AppColors.surface,
@@ -41,19 +46,13 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
   }
 
   void _zoomIn() {
-    final currentScale = _transformController.value.getMaxScaleOnAxis();
-    if (currentScale < 3.5) {
-      final matrix = _transformController.value.clone()..scale(1.25);
-      _transformController.value = matrix;
-    }
+    final currentZoom = _mapController.camera.zoom;
+    _mapController.move(_mapController.camera.center, currentZoom + 1);
   }
 
   void _zoomOut() {
-    final currentScale = _transformController.value.getMaxScaleOnAxis();
-    if (currentScale > 0.8) {
-      final matrix = _transformController.value.clone()..scale(0.8);
-      _transformController.value = matrix;
-    }
+    final currentZoom = _mapController.camera.zoom;
+    _mapController.move(_mapController.camera.center, currentZoom - 1);
   }
 
   Future<void> _launchGoogleMaps() async {
@@ -118,20 +117,111 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // 1. Full-screen Interactive Google Map View
+          // 1. Full-screen Live Interactive Map (FlutterMap + CartoDB Dark Tiles)
           Positioned.fill(
-            child: InteractiveViewer(
-              transformationController: _transformController,
-              minScale: 0.7,
-              maxScale: 3.5,
-              boundaryMargin: const EdgeInsets.all(200),
-              child: SizedBox(
-                width: 1200,
-                height: 1200,
-                child: CustomPaint(
-                  painter: _GoogleMapFullInteractivePainter(style: _mapStyle),
-                ),
+            child: FlutterMap(
+              mapController: _mapController,
+              options: const MapOptions(
+                initialCenter: LatLng(_latitude, _longitude),
+                initialZoom: 16.0,
+                minZoom: 10.0,
+                maxZoom: 19.0,
               ),
+              children: [
+                TileLayer(
+                  urlTemplate: _tileUrl,
+                  userAgentPackageName: 'org.guardvarx.app',
+                ),
+                CircleLayer(
+                  circles: [
+                    CircleMarker(
+                      point: const LatLng(_latitude, _longitude),
+                      radius: 36,
+                      useRadiusInMeter: false,
+                      color: AppColors.cyan.withOpacity(0.18),
+                      borderColor: AppColors.cyan.withOpacity(0.65),
+                      borderStrokeWidth: 1.5,
+                    ),
+                  ],
+                ),
+                MarkerLayer(
+                  markers: [
+                    // A. Current User Pin
+                    Marker(
+                      point: const LatLng(_latitude, _longitude),
+                      width: 140,
+                      height: 70,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xE60052CC),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white.withOpacity(0.4)),
+                              boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 4)],
+                            ),
+                            child: const Text(
+                              'You are here (12m)',
+                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryBlue,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2.5),
+                              boxShadow: [
+                                BoxShadow(color: AppColors.cyan.withOpacity(0.8), blurRadius: 8),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // B. AG-DMS Metro Station Marker
+                    Marker(
+                      point: const LatLng(13.0440, 80.2520),
+                      width: 130,
+                      height: 30,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.subway_rounded, color: AppColors.cyan, size: 16),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+                            child: const Text('AG-DMS Metro', style: TextStyle(color: Colors.white, fontSize: 9)),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // C. Teynampet Signal Marker
+                    Marker(
+                      point: const LatLng(13.0375, 80.2485),
+                      width: 130,
+                      height: 30,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.traffic_rounded, color: AppColors.warningAmber, size: 16),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+                            child: const Text('Teynampet Signal', style: TextStyle(color: Colors.white, fontSize: 9)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
 
@@ -493,228 +583,5 @@ class _LocationDetailsScreenState extends State<LocationDetailsScreen> {
         ),
       ),
     );
-  }
-}
-
-/// Full interactive canvas rendering an authentic Dark Theme Google Map
-/// with Chennai street layout, metro track, arterial Anna Salai, landmarks, and live user marker.
-class _GoogleMapFullInteractivePainter extends CustomPainter {
-  final String style;
-
-  _GoogleMapFullInteractivePainter({required this.style});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bool isSatellite = style == 'Satellite';
-    final Color bgColor = isSatellite ? const Color(0xFF07141E) : const Color(0xFF0A121F);
-
-    // 1. Base Ground Fill
-    final bgPaint = Paint()..color = bgColor;
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
-    // 2. City Blocks & Urban Parcels
-    final parcelPaint = Paint()
-      ..color = isSatellite ? const Color(0xFF0B1F2C) : const Color(0xFF0F1B2C)
-      ..style = PaintingStyle.fill;
-
-    // Draw various urban parcels across map
-    for (double x = 40; x < size.width; x += 180) {
-      for (double y = 40; y < size.height; y += 160) {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(Rect.fromLTWH(x, y, 140, 110), const Radius.circular(8)),
-          parcelPaint,
-        );
-      }
-    }
-
-    // 3. Green Park (Semmozhi Poonga nearby on Cathedral Road)
-    final parkPaint = Paint()
-      ..color = const Color(0xFF0E2E28)
-      ..style = PaintingStyle.fill;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(size.width * 0.48, size.height * 0.22, 190, 130), const Radius.circular(16)),
-      parkPaint,
-    );
-
-    // 4. Minor Grid Streets
-    final minorStreetPaint = Paint()
-      ..color = const Color(0xFF162539)
-      ..strokeWidth = 3.5
-      ..style = PaintingStyle.stroke;
-
-    for (double i = 0; i <= size.width; i += 90) {
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), minorStreetPaint);
-    }
-    for (double i = 0; i <= size.height; i += 90) {
-      canvas.drawLine(Offset(0, i), Offset(size.width, i), minorStreetPaint);
-    }
-
-    // 5. Secondary Crossings (Eldams Road, Cenotaph Road)
-    final secRoadPaint = Paint()
-      ..color = const Color(0xFF1E3550)
-      ..strokeWidth = 8.0
-      ..style = PaintingStyle.stroke;
-
-    // Eldams Road horizontal
-    canvas.drawLine(Offset(0, size.height * 0.52), Offset(size.width, size.height * 0.49), secRoadPaint);
-    // Chamiers Road
-    canvas.drawLine(Offset(0, size.height * 0.68), Offset(size.width, size.height * 0.66), secRoadPaint);
-    // Cathedral Road
-    canvas.drawLine(Offset(0, size.height * 0.35), Offset(size.width, size.height * 0.38), secRoadPaint);
-
-    // 6. Metro Line (Chennai Metro Phase 1 AG-DMS underground track)
-    final metroPaint = Paint()
-      ..color = const Color(0xFF00B0FF)
-      ..strokeWidth = 3.0
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(size.width * 0.28, size.height),
-      Offset(size.width * 0.72, 0),
-      metroPaint,
-    );
-
-    // 7. Main Arterial Highway: Anna Salai (Mount Road)
-    final mainArteryPaint = Paint()
-      ..color = const Color(0xFF2C4C72)
-      ..strokeWidth = 16.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final annaSalaiStart = Offset(size.width * 0.24, size.height);
-    final annaSalaiEnd = Offset(size.width * 0.76, 0);
-    canvas.drawLine(annaSalaiStart, annaSalaiEnd, mainArteryPaint);
-
-    // Anna Salai central dividing median line
-    final medianPaint = Paint()
-      ..color = const Color(0xFF456F9E)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(annaSalaiStart, annaSalaiEnd, medianPaint);
-
-    // 8. Landmark Markers & Labels
-    _drawLandmark(
-      canvas,
-      pos: Offset(size.width * 0.53, size.height * 0.36),
-      name: 'AG-DMS Metro Station',
-      icon: Icons.subway_rounded,
-      color: AppColors.cyan,
-    );
-
-    _drawLandmark(
-      canvas,
-      pos: Offset(size.width * 0.44, size.height * 0.58),
-      name: 'Teynampet Signal',
-      icon: Icons.traffic_rounded,
-      color: AppColors.warningAmber,
-    );
-
-    _drawLandmark(
-      canvas,
-      pos: Offset(size.width * 0.65, size.height * 0.28),
-      name: 'Semmozhi Poonga (Botanical Garden)',
-      icon: Icons.park_rounded,
-      color: AppColors.successGreen,
-    );
-
-    // 9. Current User Location at Anna Salai, Teynampet
-    final userPos = Offset(size.width * 0.50, size.height * 0.50);
-
-    // 12m Accuracy radius zone (pulsing cyan circle)
-    final accuracyFill = Paint()
-      ..color = AppColors.cyan.withOpacity(0.16)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(userPos, 48, accuracyFill);
-
-    final accuracyStroke = Paint()
-      ..color = AppColors.cyan.withOpacity(0.55)
-      ..strokeWidth = 1.8
-      ..style = PaintingStyle.stroke;
-    canvas.drawCircle(userPos, 48, accuracyStroke);
-
-    // Inner radar ring
-    canvas.drawCircle(userPos, 28, accuracyStroke..color = AppColors.cyan.withOpacity(0.3));
-
-    // Blue glow halo
-    final haloPaint = Paint()
-      ..color = AppColors.primaryBlue.withOpacity(0.5)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(userPos, 16, haloPaint);
-
-    // Solid blue location pin
-    final pinPaint = Paint()
-      ..color = AppColors.primaryBlue
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(userPos, 10, pinPaint);
-
-    // White precision dot in center
-    final whiteDot = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(userPos, 3.5, whiteDot);
-
-    // "You are here" label badge above pin
-    final textSpan = TextSpan(
-      text: 'You are here (12m)',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 11,
-        fontWeight: FontWeight.bold,
-        backgroundColor: Color(0xCC0052CC),
-      ),
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    textPainter.paint(canvas, Offset(userPos.dx - (textPainter.width / 2), userPos.dy - 32));
-  }
-
-  void _drawLandmark(
-    Canvas canvas, {
-    required Offset pos,
-    required String name,
-    required IconData icon,
-    required Color color,
-  }) {
-    // Landmark circle
-    final paint = Paint()
-      ..color = color.withOpacity(0.25)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(pos, 10, paint);
-
-    final stroke = Paint()
-      ..color = color
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-    canvas.drawCircle(pos, 10, stroke);
-
-    final dot = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(pos, 3.5, dot);
-
-    // Landmark text label
-    final span = TextSpan(
-      text: name,
-      style: TextStyle(
-        color: Colors.white.withOpacity(0.85),
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        shadows: const [
-          Shadow(color: Colors.black, blurRadius: 4),
-        ],
-      ),
-    );
-    final painter = TextPainter(
-      text: span,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    painter.paint(canvas, Offset(pos.dx + 14, pos.dy - 6));
-  }
-
-  @override
-  bool shouldRepaint(covariant _GoogleMapFullInteractivePainter oldDelegate) {
-    return oldDelegate.style != style;
   }
 }

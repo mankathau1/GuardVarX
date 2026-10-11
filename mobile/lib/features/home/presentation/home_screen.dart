@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/providers/live_location_provider.dart';
 import '../../../core/providers/navigation_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -27,6 +28,7 @@ class HomeScreen extends ConsumerWidget {
     final activeSOS = ref.watch(sosProvider);
     final safeWalk = ref.watch(safeWalkProvider);
     final contacts = ref.watch(contactsProvider);
+    final liveLoc = ref.watch(liveLocationProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -53,10 +55,12 @@ class HomeScreen extends ConsumerWidget {
 
                 // B. Safety & Connectivity Status Card
                 SafetyStatusCard(
-                  hasLocationPermission: true,
+                  hasLocationPermission: liveLoc.hasPermission,
                   isNetworkConnected: true,
                   statusTitle: 'You are safe',
-                  locationFreshnessText: 'Location active • Accuracy 12 m',
+                  locationFreshnessText: liveLoc.isGpsLive
+                      ? 'Live GPS • Accuracy ${liveLoc.accuracy.toStringAsFixed(0)} m'
+                      : 'Location active • Accuracy 12 m',
                   networkTitle: 'Online',
                   lastUpdatedText: 'Last updated\n2 min ago',
                   onTap: () => context.push('/location-details'),
@@ -65,10 +69,12 @@ class HomeScreen extends ConsumerWidget {
 
                 // C. Current Location Card
                 LocationCard(
-                  address: 'Anna Salai, Teynampet',
-                  cityState: 'Chennai, Tamil Nadu',
-                  accuracyMeters: 12.0,
-                  freshness: '2 min ago',
+                  address: liveLoc.address,
+                  cityState: liveLoc.cityState,
+                  accuracyMeters: liveLoc.accuracy,
+                  freshness: liveLoc.isGpsLive ? 'Live GPS' : '2 min ago',
+                  latitude: liveLoc.latitude,
+                  longitude: liveLoc.longitude,
                   onDetailsTap: () => context.push('/location-details'),
                 ),
                 const SizedBox(height: AppSpacing.lg),

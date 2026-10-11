@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/glass_card.dart';
 import '../../../../core/widgets/gradient_icon_box.dart';
@@ -8,6 +10,8 @@ class LocationCard extends StatelessWidget {
   final String cityState;
   final double accuracyMeters;
   final String freshness;
+  final double latitude;
+  final double longitude;
   final bool isPermissionGranted;
   final VoidCallback onDetailsTap;
 
@@ -17,6 +21,8 @@ class LocationCard extends StatelessWidget {
     this.cityState = 'Chennai, Tamil Nadu',
     this.accuracyMeters = 12.0,
     this.freshness = '2 min ago',
+    this.latitude = 13.040517,
+    this.longitude = 80.250328,
     this.isPermissionGranted = true,
     required this.onDetailsTap,
   });
@@ -99,7 +105,7 @@ class LocationCard extends StatelessWidget {
 
           const SizedBox(width: 10),
 
-          // Right: Google Map Preview Viewport with Radar Rings & 12m Accuracy Pill
+          // Right: Live Google Map Preview Viewport with Radar Rings & Accuracy Pill
           Expanded(
             flex: 10,
             child: SizedBox(
@@ -108,14 +114,77 @@ class LocationCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 child: Stack(
                   children: [
-                    // A. Dark Google Map Street Grid Painter
+                    // A. Instant Dark Map Vector Ground Layer (Zero delay)
                     Positioned.fill(
                       child: CustomPaint(
                         painter: _GoogleMapMiniPreviewPainter(),
                       ),
                     ),
 
-                    // B. Interactive Navigation Chevrons (< and >)
+                    // B. Live Raster Map Tiles (CartoDB Dark Matter)
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.85,
+                        child: FlutterMap(
+                          options: MapOptions(
+                            initialCenter: LatLng(latitude, longitude),
+                            initialZoom: 15.0,
+                            interactionOptions: const InteractionOptions(
+                              flags: InteractiveFlag.none, // Do not intercept Home scroll
+                            ),
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate: 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'org.guardvarx.app',
+                              tileBuilder: (context, tileWidget, tile) {
+                                return tileWidget;
+                              },
+                            ),
+                            CircleLayer(
+                              circles: [
+                                CircleMarker(
+                                  point: LatLng(latitude, longitude),
+                                  radius: 20,
+                                  useRadiusInMeter: false,
+                                  color: AppColors.cyan.withOpacity(0.18),
+                                  borderColor: AppColors.cyan.withOpacity(0.5),
+                                  borderStrokeWidth: 1.2,
+                                ),
+                              ],
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: LatLng(latitude, longitude),
+                                  width: 20,
+                                  height: 20,
+                                  child: Center(
+                                    child: Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryBlue,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.primaryBlue.withOpacity(0.8),
+                                            blurRadius: 6,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // C. Interactive Navigation Chevrons (< and >)
                     Positioned(
                       left: 4,
                       top: 0,
@@ -124,7 +193,7 @@ class LocationCard extends StatelessWidget {
                         child: Icon(
                           Icons.chevron_left_rounded,
                           size: 16,
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withOpacity(0.5),
                         ),
                       ),
                     ),
@@ -136,19 +205,19 @@ class LocationCard extends StatelessWidget {
                         child: Icon(
                           Icons.chevron_right_rounded,
                           size: 16,
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withOpacity(0.5),
                         ),
                       ),
                     ),
 
-                    // C. 12m Accuracy Glass Badge Pill
+                    // D. Accuracy Glass Badge Pill (e.g. 12 m)
                     Positioned(
-                      right: 14,
-                      bottom: 8,
+                      right: 12,
+                      bottom: 6,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xE609121D),
+                          color: const Color(0xF009121D),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: AppColors.cyan.withOpacity(0.4), width: 0.8),
                           boxShadow: [
